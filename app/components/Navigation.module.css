@@ -1,0 +1,105 @@
+.nav {
+    width: 280px;
+    height: 95vh;
+    margin: 2.5vh 0 2.5vh 2rem;
+    display: flex;
+    flex-direction: column;
+    padding: 2rem;
+    background: rgba(30, 41, 59, 0.6);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 1.5rem;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    position: sticky;
+    top: 2.5vh;
+}
+
+.logoContainer {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 3rem;
+    padding: 0 0.5rem;
+}
+
+.logoIcon {
+    color: var(--color-primary);
+    filter: drop-shadow(0 0 8px rgba(255, 179, 0, 0.4));
+}
+
+.brand {
+    font-size: 1.25rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    background: linear-gradient(to right, #fff, #cbd5e1);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.menu {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    flex: 1;
+}
+
+.link {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    border-radius: 0.75rem;
+    color: var(--color-text-muted);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+.link:hover {
+    background: rgba(255, 255, 255, 0.03);
+    color: var(--color-text-main);
+    transform: translateX(4px);
+}
+
+.activeLink {
+    background: linear-gradient(90deg, rgba(255, 179, 0, 0.1), transparent);
+    color: var(--color-primary);
+    border-left: 3px solid var(--color-primary);
+}
+
+.activeLink .icon {
+    color: var(--color-primary);
+}
+
+.userProfile {
+    margin-top: auto;
+    padding-top: 1.5rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--color-secondary), var(--color-secondary-light));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    color: #fff;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.userInfo h4 {
+    font-size: 0.9rem;
+    color: var(--color-text-main);
+}
+
+.userInfo p {
+    font-size: 0.75rem;
+    color: var(--color-text-muted);
+}
