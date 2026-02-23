@@ -30,7 +30,7 @@ export default function ExpenseForm() {
         setFormData(prev => ({ ...prev, [name]: value }));
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
         const selectedSupervisor = supervisors.find(s => s.id === formData.supervisorId);
@@ -40,7 +40,7 @@ export default function ExpenseForm() {
             return;
         }
 
-        const success = addExpense({
+        const success = await addExpense({
             date: formData.date,
             amount: parseFloat(formData.amount),
             category: formData.category,

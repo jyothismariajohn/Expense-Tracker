@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
 export interface Supervisor {
     id: string;
@@ -15,32 +15,76 @@ export interface Expense {
     amount: number;
     category: string;
     supervisorId: string;
-    supervisorName: string; // Denormalized for easier display
+    supervisorName: string;
     description: string;
 }
 
 interface EstateContextType {
     supervisors: Supervisor[];
     expenses: Expense[];
-    addExpense: (expense: Omit<Expense, 'id'>) => boolean;
+    addExpense: (expense: Omit<Expense, 'id'>) => Promise<boolean>;
+    addSupervisor: (supervisor: Omit<Supervisor, 'id' | 'balance'>) => Promise<boolean>;
     getSupervisor: (id: string) => Supervisor | undefined;
+    isLoading: boolean;
 }
 
 const EstateContext = createContext<EstateContextType | undefined>(undefined);
 
 export const EstateProvider = ({ children }: { children: ReactNode }) => {
-    // Initial Mock Data
-    const [supervisors, setSupervisors] = useState<Supervisor[]>([
-        { id: '1', name: 'John Doe', allocation: 5000, balance: 5000 },
-        { id: '2', name: 'Jane Smith', allocation: 5000, balance: 5000 },
-        { id: '3', name: 'Robert Johnson', allocation: 5000, balance: 5000 },
-        { id: '4', name: 'Emily Davis', allocation: 5000, balance: 5000 },
-        { id: '5', name: 'Michael Wilson', allocation: 5000, balance: 5000 },
-    ]);
-
+    const [supervisors, setSupervisors] = useState<Supervisor[]>([]);
     const [expenses, setExpenses] = useState<Expense[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
 
-    const addExpense = (newExpenseData: Omit<Expense, 'id'>): boolean => {
+    const fetchData = async () => {
+        try {
+            const [supRes, expRes] = await Promise.all([
+                fetch('/api/supervisors'),
+                fetch('/api/expenses')
+            ]);
+
+            const supData = await supRes.json();
+            const expData = await expRes.json();
+
+            // Automatic Seeding if Database is Empty
+            if (supData.length === 0) {
+                await seedData();
+                return; // seedData will re-fetch
+            }
+
+            setSupervisors(supData);
+            setExpenses(expData);
+        } catch (error) {
+            console.error('Failed to fetch data:', error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const seedData = async () => {
+        const initialSupervisors = [
+            { name: 'John Doe', allocation: 5000 },
+            { name: 'Jane Smith', allocation: 5000 },
+            { name: 'Robert Johnson', allocation: 5000 },
+            { name: 'Emily Davis', allocation: 5000 },
+            { name: 'Michael Wilson', allocation: 5000 },
+        ];
+
+        for (const sup of initialSupervisors) {
+            await fetch('/api/supervisors', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(sup),
+            });
+        }
+        // Re-fetch after seeding
+        fetchData();
+    };
+
+    useEffect(() => {
+        fetchData();
+    }, []);
+
+    const addExpense = async (newExpenseData: Omit<Expense, 'id'>): Promise<boolean> => {
         const supervisor = supervisors.find(s => s.id === newExpenseData.supervisorId);
 
         if (!supervisor) {
@@ -53,29 +97,60 @@ export const EstateProvider = ({ children }: { children: ReactNode }) => {
             return false;
         }
 
-        // Deduct balance
-        const updatedSupervisors = supervisors.map(s =>
-            s.id === supervisor.id
-                ? { ...s, balance: s.balance - newExpenseData.amount }
-                : s
-        );
+        try {
+            const res = await fetch('/api/expenses', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(newExpenseData),
+            });
 
-        setSupervisors(updatedSupervisors);
+            if (res.ok) {
+                const { data } = await res.json();
 
-        // Add Expense
-        const newExpense: Expense = {
-            ...newExpenseData,
-            id: Math.random().toString(36).substr(2, 9),
-        };
+                // Optimistically update or re-fetch
+                // Re-fetching ensures server-side calculations (like balance) are accurate
+                await fetchData();
+                return true;
+            }
+            return false;
+        } catch (error) {
+            console.error('Failed to add expense:', error);
+            return false;
+        }
+    };
 
-        setExpenses(prev => [newExpense, ...prev]);
-        return true;
+    const addSupervisor = async (newSupervisorData: Omit<Supervisor, 'id' | 'balance'>): Promise<boolean> => {
+        try {
+            const res = await fetch('/api/supervisors', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(newSupervisorData),
+            });
+
+            if (res.ok) {
+                await fetchData();
+                return true;
+            } else {
+                let errorMessage = 'Server error: Could not save supervisor.';
+                const contentType = res.headers.get("content-type");
+                if (contentType && contentType.indexOf("application/json") !== -1) {
+                    const errorData = await res.json();
+                    errorMessage = errorData.error || errorMessage;
+                }
+                console.error('Failed to add supervisor:', errorMessage);
+                alert(`Error: ${errorMessage}`);
+                return false;
+            }
+        } catch (error) {
+            console.error('Failed to add supervisor:', error);
+            return false;
+        }
     };
 
     const getSupervisor = (id: string) => supervisors.find(s => s.id === id);
 
     return (
-        <EstateContext.Provider value={{ supervisors, expenses, addExpense, getSupervisor }}>
+        <EstateContext.Provider value={{ supervisors, expenses, addExpense, addSupervisor, getSupervisor, isLoading }}>
             {children}
         </EstateContext.Provider>
     );

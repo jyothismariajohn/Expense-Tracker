@@ -1,4 +1,5 @@
 import DashboardStats from './components/DashboardStats';
+import ExpenseList from './components/ExpenseList';
 import styles from './page.module.css';
 
 export default function Home() {
@@ -20,9 +21,7 @@ export default function Home() {
 
       <section>
         <h2 className={styles.sectionTitle}>Recent Expenses</h2>
-        <div className="glass-panel" style={{ padding: '2rem', textAlign: 'center', color: 'var(--color-text-muted)' }}>
-          <p>Recent transactions will appear here.</p>
-        </div>
+        <ExpenseList limit={5} showControls={false} />
       </section>
     </div>
   );

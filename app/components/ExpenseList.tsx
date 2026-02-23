@@ -4,28 +4,40 @@ import React, { useState } from 'react';
 import { useEstate } from '../context/EstateContext';
 import styles from './ExpenseList.module.css';
 
-export default function ExpenseList() {
+interface ExpenseListProps {
+    limit?: number;
+    showControls?: boolean;
+}
+
+export default function ExpenseList({ limit, showControls = true }: ExpenseListProps) {
     const { expenses } = useEstate();
     const [searchTerm, setSearchTerm] = useState('');
 
-    const filteredExpenses = expenses.filter(expense =>
-        expense.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        expense.supervisorName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        expense.category.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    const filteredExpenses = expenses
+        .filter(expense =>
+            expense.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            expense.supervisorName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            expense.category.toLowerCase().includes(searchTerm.toLowerCase())
+        )
+        // Sort explicitly by date descending just in case, though API should handle it
+        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+    const displayedExpenses = limit ? filteredExpenses.slice(0, limit) : filteredExpenses;
 
     return (
         <div className={`${styles.container} glass-panel`} style={{ padding: '2rem' }}>
-            <div className={styles.controls}>
-                <h2 style={{ fontSize: '1.5rem' }}>Expense History</h2>
-                <input
-                    type="text"
-                    placeholder="Search expenses..."
-                    className={styles.search}
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                />
-            </div>
+            {showControls && (
+                <div className={styles.controls}>
+                    <h2 style={{ fontSize: '1.5rem' }}>Expense History</h2>
+                    <input
+                        type="text"
+                        placeholder="Search expenses..."
+                        className={styles.search}
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                    />
+                </div>
+            )}
 
             <div className={styles.tableContainer}>
                 <table className={styles.table}>
@@ -39,7 +51,7 @@ export default function ExpenseList() {
                         </tr>
                     </thead>
                     <tbody>
-                        {filteredExpenses.map((expense) => (
+                        {displayedExpenses.map((expense) => (
                             <tr key={expense.id} className={styles.tr}>
                                 <td className={styles.td}>{expense.date}</td>
                                 <td className={styles.td}>{expense.description}</td>
@@ -54,9 +66,9 @@ export default function ExpenseList() {
                         ))}
                     </tbody>
                 </table>
-                {filteredExpenses.length === 0 && (
+                {displayedExpenses.length === 0 && (
                     <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--color-text-muted)' }}>
-                        No expenses found matching your search.
+                        {showControls ? 'No expenses found matching your search.' : 'No recent expenses.'}
                     </div>
                 )}
             </div>

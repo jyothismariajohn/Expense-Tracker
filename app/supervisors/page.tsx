@@ -1,20 +1,50 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import { useEstate } from '../context/EstateContext';
-import { ArrowRight, User } from 'lucide-react';
+import { ArrowRight, User, Plus, X } from 'lucide-react';
 import styles from './page.module.css';
 
 export default function SupervisorsPage() {
-    const { supervisors, expenses } = useEstate();
+    const { supervisors, expenses, addSupervisor } = useEstate();
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [newName, setNewName] = useState('');
+    const [newAllocation, setNewAllocation] = useState('');
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    const handleAddSupervisor = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!newName.trim() || !newAllocation) return;
+
+        setIsSubmitting(true);
+        const success = await addSupervisor({
+            name: newName.trim(),
+            allocation: Number(newAllocation)
+        });
+
+        if (success) {
+            setIsModalOpen(false);
+            setNewName('');
+            setNewAllocation('');
+        }
+        setIsSubmitting(false);
+    };
 
     return (
         <div>
-            <header style={{ marginBottom: '2rem' }}>
-                <h1 style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>Supervisors</h1>
-                <p style={{ color: 'var(--color-text-muted)' }}>Manage and view details for all estate supervisors.</p>
-            </header>
+            <div className={styles.headerContainer}>
+                <header>
+                    <h1 style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>Supervisors</h1>
+                    <p style={{ color: 'var(--color-text-muted)' }}>Manage and view details for all estate supervisors.</p>
+                </header>
+                <button
+                    className={styles.addButton}
+                    onClick={() => setIsModalOpen(true)}
+                >
+                    <Plus size={20} /> Add Supervisor
+                </button>
+            </div>
 
             <div className={styles.grid}>
                 {supervisors.map(supervisor => {
@@ -74,6 +104,62 @@ export default function SupervisorsPage() {
                     );
                 })}
             </div>
+
+            {isModalOpen && (
+                <div className={styles.modalOverlay}>
+                    <div className={styles.modalContent}>
+                        <div className={styles.modalHeader}>
+                            <h2>Add New Supervisor</h2>
+                            <button className={styles.closeButton} onClick={() => setIsModalOpen(false)}>
+                                <X size={24} />
+                            </button>
+                        </div>
+                        <form onSubmit={handleAddSupervisor}>
+                            <div className={styles.formGroup}>
+                                <label htmlFor="name">Supervisor Name</label>
+                                <input
+                                    type="text"
+                                    id="name"
+                                    value={newName}
+                                    onChange={(e) => setNewName(e.target.value)}
+                                    placeholder="e.g. John Doe"
+                                    required
+                                />
+                            </div>
+                            <div className={styles.formGroup}>
+                                <label htmlFor="allocation">Total Allocation ($)</label>
+                                <input
+                                    type="number"
+                                    id="allocation"
+                                    value={newAllocation}
+                                    onChange={(e) => setNewAllocation(e.target.value)}
+                                    placeholder="e.g. 5000"
+                                    min="0"
+                                    step="0.01"
+                                    required
+                                />
+                            </div>
+                            <div className={styles.modalActions}>
+                                <button
+                                    type="button"
+                                    className={styles.cancelButton}
+                                    onClick={() => setIsModalOpen(false)}
+                                    disabled={isSubmitting}
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="submit"
+                                    className={styles.submitButton}
+                                    disabled={isSubmitting}
+                                >
+                                    {isSubmitting ? 'Adding...' : 'Add Supervisor'}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
